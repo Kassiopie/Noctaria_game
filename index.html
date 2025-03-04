@@ -170,6 +170,11 @@
         .message {
             margin: 5px 0;
         }
+        #hairSelection {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
@@ -304,6 +309,12 @@
             viewportHeight: 18,
         };
 
+        // Variables globales pour la création de personnage
+        let selectedGender = null;
+        let selectedSkin = null;
+        let selectedHair = null;
+        let selectedCharType = null;
+
         // État du jeu
         const gameState = {
             player: {
@@ -330,14 +341,12 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const characterCreation = document.getElementById('characterCreation');
-        const characterOptions = document.querySelectorAll('.charOption');
-        const startGameBtn = document.getElementById('startGame');
-        const inventorySlots = document.querySelectorAll('.inventorySlot');
         const coordinatesDisplay = document.getElementById('coordinates');
         const messagesContainer = document.getElementById('messages');
         const healthBar = document.querySelector('.health .statFill');
         const energyBar = document.querySelector('.energy .statFill');
         const magicBar = document.querySelector('.magic .statFill');
+        const inventorySlots = document.querySelectorAll('.inventorySlot');
 
         // Définition des tuiles (simplifié avec emojis pour ce prototype)
         const tiles = {
@@ -510,7 +519,7 @@
                 }
             }
             
-                            // Dessiner le joueur
+            // Dessiner le joueur
             const playerScreenX = gameState.player.x - offsetX;
             const playerScreenY = gameState.player.y - offsetY;
             
@@ -742,118 +751,3 @@
                 
                 // Supprimer l'écouteur d'événements après la construction
                 canvas.removeEventListener('click', handleBuildClick);
-            };
-            
-            canvas.addEventListener('click', handleBuildClick, { once: true });
-        }
-
-        // Fonction pour ajouter un objet à l'inventaire
-        function addToInventory(itemName) {
-            // Chercher un emplacement vide
-            for (let i = 0; i < gameState.player.inventory.length; i++) {
-                if (gameState.player.inventory[i] === null) {
-                    gameState.player.inventory[i] = itemName;
-                    updateInventoryDisplay();
-                    return true;
-                }
-            }
-            
-            showMessage('Votre inventaire est plein !');
-            return false;
-        }
-
-        // Fonction pour retirer un objet de l'inventaire
-        function removeFromInventory(itemName) {
-            const index = gameState.player.inventory.indexOf(itemName);
-            if (index !== -1) {
-                gameState.player.inventory[index] = null;
-                updateInventoryDisplay();
-                return true;
-            }
-            return false;
-        }
-
-        // Mettre à jour l'affichage de l'inventaire
-        function updateInventoryDisplay() {
-            inventorySlots.forEach((slot, index) => {
-                const item = gameState.player.inventory[index];
-                if (item) {
-                    slot.textContent = items[item].emoji;
-                } else {
-                    slot.textContent = '';
-                }
-            });
-        }
-
-        // Mettre à jour les statistiques
-        function updateStats() {
-            // Limiter les valeurs
-            gameState.player.health = Math.max(0, Math.min(100, gameState.player.health));
-            gameState.player.energy = Math.max(0, Math.min(100, gameState.player.energy));
-            gameState.player.magic = Math.max(0, Math.min(100, gameState.player.magic));
-            
-            // Mettre à jour l'interface
-            healthBar.style.width = `${gameState.player.health}%`;
-            energyBar.style.width = `${gameState.player.energy}%`;
-            magicBar.style.width = `${gameState.player.magic}%`;
-            
-            // Vérifier les conditions critiques
-            if (gameState.player.health <= 0) {
-                showMessage('Vous vous êtes évanoui de fatigue et vous vous réveillez dans votre lit.');
-                gameState.player.health = 30;
-                gameState.player.energy = 50;
-                // Téléporter le joueur à son lit
-                gameState.player.x = 25;
-                gameState.player.y = 24;
-                updateStats();
-                renderWorld();
-            }
-            
-            if (gameState.player.energy <= 10) {
-                showMessage('Vous êtes fatigué, trouvez un lit pour vous reposer !');
-            }
-        }
-
-        // Initialisation du jeu
-        function initGame() {
-            generateWorld();
-            
-            // Définir les objets d'inventaire de départ
-            gameState.player.inventory = ['wand', 'potion', 'book', 'seed', 'brick', 'apple', null, null];
-            
-            updateInventoryDisplay();
-            updateStats();
-            
-            // Initialiser les clics sur les emplacements d'inventaire
-            inventorySlots.forEach(slot => {
-                slot.addEventListener('click', () => {
-                    const slotIndex = parseInt(slot.dataset.slot);
-                    gameState.player.activeSlot = slotIndex;
-                    inventorySlots.forEach(s => s.classList.remove('active'));
-                    slot.classList.add('active');
-                });
-            });
-            
-            renderWorld();
-            
-            // Message de bienvenue selon la maison
-            let welcomeMessage = '';
-            switch(gameState.player.type) {
-                case 'gryffondor':
-                    welcomeMessage = 'Bienvenue à Noctaria, courageux Gryffondor ! Votre bravoure sera votre plus grand atout.';
-                    break;
-                case 'poufsouffle':
-                    welcomeMessage = 'Bienvenue à Noctaria, loyal Poufsouffle ! Votre persévérance vous mènera loin.';
-                    break;
-                case 'serdaigle':
-                    welcomeMessage = 'Bienvenue à Noctaria, sage Serdaigle ! Votre intelligence éclairera votre chemin.';
-                    break;
-                case 'serpentard':
-                    welcomeMessage = 'Bienvenue à Noctaria, rusé Serpentard ! Votre ambition vous permettra d\'accomplir de grandes choses.';
-                    break;
-                default:
-                    welcomeMessage = 'Bienvenue à Noctaria ! Utilisez les flèches ou ZQSD pour vous déplacer, E pour interagir et F pour construire.';
-            }
-            
-            showMessage(welcomeMessage);
-        }
